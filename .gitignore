@@ -11,4 +11,7 @@ node_modules/
 
 # Local authentication credentials
 /config/auth.json
+.env
+.env.*
+!.env.example
 
