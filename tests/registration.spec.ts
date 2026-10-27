@@ -1,6 +1,6 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
-
 test.describe('Registration form', () => {
+
   const validUser = {
     name: 'Anna',
     lastName: 'Smith',
@@ -41,35 +41,33 @@ test.describe('Registration form', () => {
     field: Locator,
     message: string,
   ) => {
-    await expect(field).toHaveClass(/is-invalid/);
     await expect(field).toHaveCSS('border-color', 'rgb(220, 53, 69)');
-
     const errorMessage = page
       .locator('.form-group')
       .filter({ has: field })
       .locator('.invalid-feedback');
-
     await expect(errorMessage).toBeVisible();
     await expect(errorMessage).toContainText(message);
   };
 
-  const expectValidField = async (field: Locator) => {
-    await expect(field).not.toHaveClass(/is-invalid/);
+  const expectValidField = async (page: Page, field: Locator) => {
+    const errorMessage = page
+      .locator('.form-group')
+      .filter({ has: field })
+      .locator('.invalid-feedback');
+    await expect(errorMessage).toBeHidden();
   };
 
   const fillAndBlurField = async (field: Locator, value: string) => {
     await field.fill(value);
     await field.blur();
-
     return field;
   };
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
-
     await page.getByRole('button', { name: 'Sign In' }).click();
     await page.getByRole('button', { name: 'Registration' }).click();
-
     await expect(
       page.getByRole('heading', { name: 'Registration' }),
     ).toBeVisible();
@@ -83,7 +81,6 @@ test.describe('Registration form', () => {
     await expect(page.locator('#signupEmail')).toBeVisible();
     await expect(page.locator('#signupPassword')).toBeVisible();
     await expect(page.locator('#signupRepeatPassword')).toBeVisible();
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeVisible();
@@ -97,22 +94,16 @@ test.describe('Registration form', () => {
     const emailField = page.locator('#signupEmail');
     const passwordField = page.locator('#signupPassword');
     const repeatPasswordField = page.locator('#signupRepeatPassword');
-
     await nameField.focus();
     await nameField.blur();
-
     await lastNameField.focus();
     await lastNameField.blur();
-
     await emailField.focus();
     await emailField.blur();
-
     await passwordField.focus();
     await passwordField.blur();
-
     await repeatPasswordField.focus();
     await repeatPasswordField.blur();
-
     await expectInvalidField(page, nameField, 'Name required');
     await expectInvalidField(page, lastNameField, 'Last name required');
     await expectInvalidField(page, emailField, 'Email required');
@@ -122,7 +113,6 @@ test.describe('Registration form', () => {
       repeatPasswordField,
       'Re-enter password required',
     );
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -132,19 +122,16 @@ test.describe('Registration form', () => {
 
   test('should require Name', async ({ page }) => {
     const field = await fillAndBlurField(page.locator('#signupName'), '');
-
     await expectInvalidField(page, field, 'Name required');
   });
 
   test('should reject Name shorter than 2 characters', async ({ page }) => {
     const field = await fillAndBlurField(page.locator('#signupName'), 'A');
-
     await expectInvalidField(
       page,
       field,
       'Name has to be from 2 to 20 characters long',
     );
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -152,8 +139,7 @@ test.describe('Registration form', () => {
 
   test('should accept Name with 2 characters', async ({ page }) => {
     const field = await fillAndBlurField(page.locator('#signupName'), 'An');
-
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
 
   test('should accept Name with 20 characters', async ({ page }) => {
@@ -161,8 +147,7 @@ test.describe('Registration form', () => {
       page.locator('#signupName'),
       'A'.repeat(20),
     );
-
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
 
   test('should reject Name longer than 20 characters', async ({ page }) => {
@@ -170,13 +155,11 @@ test.describe('Registration form', () => {
       page.locator('#signupName'),
       'A'.repeat(21),
     );
-
     await expectInvalidField(
       page,
       field,
       'Name has to be from 2 to 20 characters long',
     );
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -184,9 +167,7 @@ test.describe('Registration form', () => {
 
   test('should reject Name containing numbers', async ({ page }) => {
     const field = await fillAndBlurField(page.locator('#signupName'), 'Anna123');
-
     await expectInvalidField(page, field, 'Name is invalid');
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -196,9 +177,7 @@ test.describe('Registration form', () => {
     page,
   }) => {
     const field = await fillAndBlurField(page.locator('#signupName'), 'Anna@');
-
     await expectInvalidField(page, field, 'Name is invalid');
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -211,9 +190,7 @@ test.describe('Registration form', () => {
       page.locator('#signupName'),
       'Анна',
     );
-
     await expectInvalidField(page, field, 'Name is invalid');
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -223,13 +200,11 @@ test.describe('Registration form', () => {
     page,
   }) => {
     const field = await fillAndBlurField(page.locator('#signupName'), ' Anna ');
-
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
 
   test('should treat spaces-only Name as required', async ({ page }) => {
     const field = await fillAndBlurField(page.locator('#signupName'), '   ');
-
     await expectInvalidField(page, field, 'Name required');
   });
 
@@ -237,7 +212,6 @@ test.describe('Registration form', () => {
     page,
   }) => {
     const field = await fillAndBlurField(page.locator('#signupName'), ' A ');
-
     await expectInvalidField(
       page,
       field,
@@ -249,7 +223,6 @@ test.describe('Registration form', () => {
 
   test('should require Last Name', async ({ page }) => {
     const field = await fillAndBlurField(page.locator('#signupLastName'), '');
-
     await expectInvalidField(page, field, 'Last name required');
   });
 
@@ -257,13 +230,11 @@ test.describe('Registration form', () => {
     page,
   }) => {
     const field = await fillAndBlurField(page.locator('#signupLastName'), 'S');
-
     await expectInvalidField(
       page,
       field,
       'Last name has to be from 2 to 20 characters long',
     );
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -271,8 +242,7 @@ test.describe('Registration form', () => {
 
   test('should accept Last Name with 2 characters', async ({ page }) => {
     const field = await fillAndBlurField(page.locator('#signupLastName'), 'Sm');
-
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
 
   test('should accept Last Name with 20 characters', async ({ page }) => {
@@ -280,8 +250,7 @@ test.describe('Registration form', () => {
       page.locator('#signupLastName'),
       'S'.repeat(20),
     );
-
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
 
   test('should reject Last Name longer than 20 characters', async ({
@@ -291,13 +260,11 @@ test.describe('Registration form', () => {
       page.locator('#signupLastName'),
       'S'.repeat(21),
     );
-
     await expectInvalidField(
       page,
       field,
       'Last name has to be from 2 to 20 characters long',
     );
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -308,9 +275,7 @@ test.describe('Registration form', () => {
       page.locator('#signupLastName'),
       'Smith123',
     );
-
     await expectInvalidField(page, field, 'Last name is invalid');
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -323,9 +288,7 @@ test.describe('Registration form', () => {
       page.locator('#signupLastName'),
       'Smith@',
     );
-
     await expectInvalidField(page, field, 'Last name is invalid');
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -338,9 +301,7 @@ test.describe('Registration form', () => {
       page.locator('#signupLastName'),
       'Сміт',
     );
-
     await expectInvalidField(page, field, 'Last name is invalid');
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -353,8 +314,7 @@ test.describe('Registration form', () => {
       page.locator('#signupLastName'),
       ' Smith ',
     );
-
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
 
   test('should treat spaces-only Last Name as required', async ({
@@ -364,7 +324,6 @@ test.describe('Registration form', () => {
       page.locator('#signupLastName'),
       '   ',
     );
-
     await expectInvalidField(page, field, 'Last name required');
   });
 
@@ -375,7 +334,6 @@ test.describe('Registration form', () => {
       page.locator('#signupLastName'),
       ' S ',
     );
-
     await expectInvalidField(
       page,
       field,
@@ -387,7 +345,6 @@ test.describe('Registration form', () => {
 
   test('should require Email', async ({ page }) => {
     const field = await fillAndBlurField(page.locator('#signupEmail'), '');
-
     await expectInvalidField(page, field, 'Email required');
   });
 
@@ -396,8 +353,7 @@ test.describe('Registration form', () => {
       page.locator('#signupEmail'),
       generateEmail(),
     );
-
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
 
   test('should reject Email without @', async ({ page }) => {
@@ -405,9 +361,7 @@ test.describe('Registration form', () => {
       page.locator('#signupEmail'),
       'annagmail.com',
     );
-
     await expectInvalidField(page, field, 'Email is incorrect');
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -418,9 +372,7 @@ test.describe('Registration form', () => {
       page.locator('#signupEmail'),
       '@gmail.com',
     );
-
     await expectInvalidField(page, field, 'Email is incorrect');
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -431,9 +383,7 @@ test.describe('Registration form', () => {
       page.locator('#signupEmail'),
       'anna@',
     );
-
     await expectInvalidField(page, field, 'Email is incorrect');
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -444,9 +394,7 @@ test.describe('Registration form', () => {
       page.locator('#signupEmail'),
       'anna@gmail',
     );
-
     await expectInvalidField(page, field, 'Email is incorrect');
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -459,9 +407,7 @@ test.describe('Registration form', () => {
       page.locator('#signupEmail'),
       'email@gmail.c',
     );
-
     await expectInvalidField(page, field, 'Email is incorrect');
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -472,9 +418,7 @@ test.describe('Registration form', () => {
       page.locator('#signupEmail'),
       'anna smith@gmail.com',
     );
-
     await expectInvalidField(page, field, 'Email is incorrect');
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -485,9 +429,7 @@ test.describe('Registration form', () => {
       page.locator('#signupEmail'),
       'anna@@gmail.com',
     );
-
     await expectInvalidField(page, field, 'Email is incorrect');
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -498,8 +440,7 @@ test.describe('Registration form', () => {
       page.locator('#signupEmail'),
       'anna@mail.example.com',
     );
-
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
 
   test('should accept Email with plus addressing', async ({ page }) => {
@@ -507,8 +448,7 @@ test.describe('Registration form', () => {
       page.locator('#signupEmail'),
       'anna+test@gmail.com',
     );
-
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
 
   // PASSWORD VALIDATION
@@ -518,7 +458,6 @@ test.describe('Registration form', () => {
       page.locator('#signupPassword'),
       '',
     );
-
     await expectInvalidField(page, field, 'Password required');
   });
 
@@ -529,9 +468,7 @@ test.describe('Registration form', () => {
       page.locator('#signupPassword'),
       'Test123',
     );
-
     await expectInvalidField(page, field, passwordError);
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -542,8 +479,7 @@ test.describe('Registration form', () => {
       page.locator('#signupPassword'),
       'Test1234',
     );
-
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
 
   test('should accept Password with 15 characters', async ({ page }) => {
@@ -551,8 +487,7 @@ test.describe('Registration form', () => {
       page.locator('#signupPassword'),
       'Testpassword123',
     );
-
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
 
   test('should reject Password longer than 15 characters', async ({
@@ -562,9 +497,7 @@ test.describe('Registration form', () => {
       page.locator('#signupPassword'),
       'Testpassword1234',
     );
-
     await expectInvalidField(page, field, passwordError);
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -577,9 +510,7 @@ test.describe('Registration form', () => {
       page.locator('#signupPassword'),
       'testpass123',
     );
-
     await expectInvalidField(page, field, passwordError);
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -592,9 +523,7 @@ test.describe('Registration form', () => {
       page.locator('#signupPassword'),
       'TESTPASS123',
     );
-
     await expectInvalidField(page, field, passwordError);
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -605,9 +534,7 @@ test.describe('Registration form', () => {
       page.locator('#signupPassword'),
       'Abcdefgh',
     );
-
     await expectInvalidField(page, field, passwordError);
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -620,7 +547,6 @@ test.describe('Registration form', () => {
       page.locator('#signupRepeatPassword'),
       '',
     );
-
     await expectInvalidField(
       page,
       field,
@@ -630,14 +556,11 @@ test.describe('Registration form', () => {
 
   test('should reject mismatching passwords', async ({ page }) => {
     await page.locator('#signupPassword').fill(validUser.password);
-
     const field = await fillAndBlurField(
       page.locator('#signupRepeatPassword'),
       'Different123',
     );
-
     await expectInvalidField(page, field, 'Passwords do not match');
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -645,14 +568,12 @@ test.describe('Registration form', () => {
 
   test('should accept matching passwords', async ({ page }) => {
     await page.locator('#signupPassword').fill(validUser.password);
-
     const field = await fillAndBlurField(
       page.locator('#signupRepeatPassword'),
       validUser.password,
     );
-
-    await expectValidField(page.locator('#signupPassword'));
-    await expectValidField(field);
+    await expectValidField(page, page.locator('#signupPassword'));
+    await expectValidField(page, field);
   });
 
   // REGISTER BUTTON
@@ -669,7 +590,6 @@ test.describe('Registration form', () => {
     page,
   }) => {
     await fillRegistrationForm(page, { name: 'A' });
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeDisabled();
@@ -679,7 +599,6 @@ test.describe('Registration form', () => {
     page,
   }) => {
     await fillRegistrationForm(page);
-
     await expect(
       page.getByRole('button', { name: 'Register', exact: true }),
     ).toBeEnabled();
@@ -689,11 +608,9 @@ test.describe('Registration form', () => {
 
   test('should close Registration form', async ({ page }) => {
     await page.getByRole('button', { name: 'Close' }).click();
-
     await expect(
       page.getByRole('heading', { name: 'Registration' }),
     ).not.toBeVisible();
-
     await expect(page).toHaveURL('https://qauto.forstudy.space/');
   });
 
@@ -701,11 +618,9 @@ test.describe('Registration form', () => {
 
   test('should register user successfully', async ({ page }) => {
     await fillRegistrationForm(page);
-
     await page
       .getByRole('button', { name: 'Register', exact: true })
       .click();
-
     await expect(page).toHaveURL(/\/panel\/garage/);
   });
 
@@ -715,47 +630,38 @@ test.describe('Registration form', () => {
     const email = generateEmail();
     const password = validUser.password;
 
-    // Registration
+  // Registration
     await fillRegistrationForm(page, {
       email,
       password,
       repeatPassword: password,
     });
-
     await page
       .getByRole('button', { name: 'Register', exact: true })
       .click();
-
     await expect(page).toHaveURL(/\/panel\/garage/);
 
-    // Logout
+  // Logout
     await page.getByRole('button', { name: 'My profile' }).click();
-
     await page.getByRole('button', { name: 'Logout' }).click();
-
     await expect(
       page.getByRole('button', { name: 'Sign In' }),
     ).toBeVisible();
-
     await expect(page).toHaveURL('https://qauto.forstudy.space/');
 
-    // Login with the same credentials
+  // Login with the same credentials
     await page.getByRole('button', { name: 'Sign In' }).click();
-
     await expect(
       page.getByRole('heading', { name: 'Log in' }),
     ).toBeVisible();
-
     await page.locator('#signinEmail').fill(email);
     await page.locator('#signinPassword').fill(password);
-
     await page
       .getByRole('button', { name: 'Login', exact: true })
       .click();
 
-    // Verify successful login
+  // Verify successful login
     await expect(page).toHaveURL(/\/panel\/garage/);
-
     await expect(
       page.getByRole('button', { name: 'My profile' }),
     ).toBeVisible();
