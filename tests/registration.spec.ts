@@ -4,7 +4,6 @@ import { RegistrationPage } from '../pages/RegistrationPage';
 import { LoginPage } from '../pages/LoginPage';
 import { GaragePage } from '../pages/GaragePage';
 
-
 test.describe('Registration form', () => {
   const validUser = {
     name: 'Anna',
@@ -38,7 +37,6 @@ test.describe('Registration form', () => {
     field: Locator,
     message: string,
   ) => {
-    await expect(field).toHaveClass(/is-invalid/);
     await expect(field).toHaveCSS('border-color', 'rgb(220, 53, 69)');
     const errorMessage = page
       .locator('.form-group')
@@ -47,8 +45,12 @@ test.describe('Registration form', () => {
     await expect(errorMessage).toBeVisible();
     await expect(errorMessage).toContainText(message);
   };
-  const expectValidField = async (field: Locator) => {
-    await expect(field).not.toHaveClass(/is-invalid/);
+  const expectValidField = async (page: Page, field: Locator) => {
+    const errorMessage = page
+      .locator('.form-group')
+      .filter({ has: field })
+      .locator('.invalid-feedback');
+    await expect(errorMessage).toBeHidden();
   };
   const fillAndBlurField = async (field: Locator, value: string) => {
     await field.fill(value);
@@ -59,7 +61,6 @@ test.describe('Registration form', () => {
   let registrationPage: RegistrationPage;
   let loginPage: LoginPage;
   let garagePage: GaragePage;
-
   test.beforeEach(async ({ page }) => {
     homePage = new HomePage(page);
     registrationPage = new RegistrationPage(page);
@@ -69,6 +70,7 @@ test.describe('Registration form', () => {
     await homePage.openRegistration();
     await expect(registrationPage.heading).toBeVisible();
   });
+
 
   // FORM DISPLAY
   test('should display registration form fields', async ({ page }) => {
@@ -81,6 +83,7 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeVisible();
   });
+
   test('should display required errors for empty fields', async ({
     page,
   }) => {
@@ -119,6 +122,7 @@ test.describe('Registration form', () => {
     const field = await fillAndBlurField(registrationPage.nameInput, '');
     await expectInvalidField(page, field, 'Name required');
   });
+
   test('should reject Name shorter than 2 characters', async ({ page }) => {
     const field = await fillAndBlurField(registrationPage.nameInput, 'A');
     await expectInvalidField(
@@ -130,17 +134,20 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should accept Name with 2 characters', async ({ page }) => {
     const field = await fillAndBlurField(registrationPage.nameInput, 'An');
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
+
   test('should accept Name with 20 characters', async ({ page }) => {
     const field = await fillAndBlurField(
       registrationPage.nameInput,
       'A'.repeat(20),
     );
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
+
   test('should reject Name longer than 20 characters', async ({ page }) => {
     const field = await fillAndBlurField(
       registrationPage.nameInput,
@@ -155,6 +162,7 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should reject Name containing numbers', async ({ page }) => {
     const field = await fillAndBlurField(registrationPage.nameInput, 'Anna123');
     await expectInvalidField(page, field, 'Name is invalid');
@@ -162,6 +170,7 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should reject Name containing special characters', async ({
     page,
   }) => {
@@ -171,6 +180,7 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should reject Name containing non-English characters', async ({
     page,
   }) => {
@@ -183,16 +193,19 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should ignore leading and trailing spaces in Name', async ({
     page,
   }) => {
     const field = await fillAndBlurField(registrationPage.nameInput, ' Anna ');
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
+
   test('should treat spaces-only Name as required', async ({ page }) => {
     const field = await fillAndBlurField(registrationPage.nameInput, '   ');
     await expectInvalidField(page, field, 'Name required');
   });
+
   test('should validate Name length after trimming spaces', async ({
     page,
   }) => {
@@ -210,6 +223,7 @@ test.describe('Registration form', () => {
     const field = await fillAndBlurField(registrationPage.lastNameInput, '');
     await expectInvalidField(page, field, 'Last name required');
   });
+
   test('should reject Last Name shorter than 2 characters', async ({
     page,
   }) => {
@@ -223,17 +237,20 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should accept Last Name with 2 characters', async ({ page }) => {
     const field = await fillAndBlurField(registrationPage.lastNameInput, 'Sm');
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
+
   test('should accept Last Name with 20 characters', async ({ page }) => {
     const field = await fillAndBlurField(
       registrationPage.lastNameInput,
       'S'.repeat(20),
     );
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
+
   test('should reject Last Name longer than 20 characters', async ({
     page,
   }) => {
@@ -250,6 +267,7 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should reject Last Name containing numbers', async ({ page }) => {
     const field = await fillAndBlurField(
       registrationPage.lastNameInput,
@@ -260,6 +278,7 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should reject Last Name containing special characters', async ({
     page,
   }) => {
@@ -272,6 +291,7 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should reject Last Name containing non-English characters', async ({
     page,
   }) => {
@@ -284,6 +304,7 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should ignore leading and trailing spaces in Last Name', async ({
     page,
   }) => {
@@ -291,8 +312,9 @@ test.describe('Registration form', () => {
       registrationPage.lastNameInput,
       ' Smith ',
     );
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
+
   test('should treat spaces-only Last Name as required', async ({
     page,
   }) => {
@@ -302,6 +324,7 @@ test.describe('Registration form', () => {
     );
     await expectInvalidField(page, field, 'Last name required');
   });
+
   test('should validate Last Name length after trimming spaces', async ({
     page,
   }) => {
@@ -322,13 +345,15 @@ test.describe('Registration form', () => {
     const field = await fillAndBlurField(registrationPage.emailInput, '');
     await expectInvalidField(page, field, 'Email required');
   });
+
   test('should accept valid Email', async ({ page }) => {
     const field = await fillAndBlurField(
       registrationPage.emailInput,
       generateEmail(),
     );
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
+
   test('should reject Email without @', async ({ page }) => {
     const field = await fillAndBlurField(
       registrationPage.emailInput,
@@ -339,6 +364,7 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should reject Email without local part', async ({ page }) => {
     const field = await fillAndBlurField(
       registrationPage.emailInput,
@@ -349,6 +375,7 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should reject Email without domain', async ({ page }) => {
     const field = await fillAndBlurField(
       registrationPage.emailInput,
@@ -359,6 +386,7 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should reject Email without domain extension', async ({ page }) => {
     const field = await fillAndBlurField(
       registrationPage.emailInput,
@@ -369,6 +397,7 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should reject Email with one-character domain extension', async ({
     page,
   }) => {
@@ -381,6 +410,7 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should reject Email containing spaces', async ({ page }) => {
     const field = await fillAndBlurField(
       registrationPage.emailInput,
@@ -391,6 +421,7 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should reject Email with two @ symbols', async ({ page }) => {
     const field = await fillAndBlurField(
       registrationPage.emailInput,
@@ -401,19 +432,21 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should accept Email with subdomain', async ({ page }) => {
     const field = await fillAndBlurField(
       registrationPage.emailInput,
       'anna@mail.example.com',
     );
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
+
   test('should accept Email with plus addressing', async ({ page }) => {
     const field = await fillAndBlurField(
       registrationPage.emailInput,
       'anna+test@gmail.com',
     );
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
 
 
@@ -425,6 +458,7 @@ test.describe('Registration form', () => {
     );
     await expectInvalidField(page, field, 'Password required');
   });
+
   test('should reject Password shorter than 8 characters', async ({
     page,
   }) => {
@@ -437,20 +471,23 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should accept Password with 8 characters', async ({ page }) => {
     const field = await fillAndBlurField(
       registrationPage.passwordInput,
       'Test1234',
     );
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
+
   test('should accept Password with 15 characters', async ({ page }) => {
     const field = await fillAndBlurField(
       registrationPage.passwordInput,
       'Testpassword123',
     );
-    await expectValidField(field);
+    await expectValidField(page, field);
   });
+
   test('should reject Password longer than 15 characters', async ({
     page,
   }) => {
@@ -463,6 +500,7 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should reject Password without uppercase letters', async ({
     page,
   }) => {
@@ -475,6 +513,7 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should reject Password without lowercase letters', async ({
     page,
   }) => {
@@ -487,6 +526,7 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should reject Password without digits', async ({ page }) => {
     const field = await fillAndBlurField(
       registrationPage.passwordInput,
@@ -511,6 +551,7 @@ test.describe('Registration form', () => {
       'Re-enter password required',
     );
   });
+
   test('should reject mismatching passwords', async ({ page }) => {
     await registrationPage.passwordInput.fill(validUser.password);
     const field = await fillAndBlurField(
@@ -522,14 +563,15 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should accept matching passwords', async ({ page }) => {
     await registrationPage.passwordInput.fill(validUser.password);
     const field = await fillAndBlurField(
       registrationPage.repeatPasswordInput,
       validUser.password,
     );
-    await expectValidField(registrationPage.passwordInput);
-    await expectValidField(field);
+    await expectValidField(page, registrationPage.passwordInput);
+    await expectValidField(page, field);
   });
 
 
@@ -541,6 +583,7 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should disable Register button for invalid form', async ({
     page,
   }) => {
@@ -549,6 +592,7 @@ test.describe('Registration form', () => {
       registrationPage.registerButton,
     ).toBeDisabled();
   });
+
   test('should enable Register button for valid form', async ({
     page,
   }) => {
@@ -575,6 +619,7 @@ test.describe('Registration form', () => {
     await registrationPage.register();
     await expect(page).toHaveURL(/\/panel\/garage/);
   });
+
   test('should register, logout and login with the same credentials', async ({
     page,
   }) => {
