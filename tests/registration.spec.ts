@@ -5,6 +5,7 @@ import { LoginPage } from '../pages/LoginPage';
 import { GaragePage } from '../pages/GaragePage';
 
 test.describe('Registration form', () => {
+
   const validUser = {
     name: 'Anna',
     lastName: 'Smith',
