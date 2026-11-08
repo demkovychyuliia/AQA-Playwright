@@ -22,6 +22,26 @@ if (result.error) {
   throw result.error;
 }
 
+// Load authentication credentials
+const auth = process.env.CI
+  ? {
+      username: process.env.BASIC_AUTH_USERNAME,
+      password: process.env.BASIC_AUTH_PASSWORD,
+    }
+  : JSON.parse(
+      fs.readFileSync(
+        path.resolve(__dirname, 'config/auth.json'),
+        'utf-8'
+      )
+    );
+
+if (!auth.username || !auth.password) {
+  throw new Error('HTTP Basic Authentication credentials are missing.');
+}
+
+/**
+ * See https://playwright.dev/docs/test-configuration.
+ */
 export default defineConfig({
   testDir: './tests',
 
@@ -45,8 +65,8 @@ export default defineConfig({
     baseURL: getEnv('BASE_URL'),
 
     httpCredentials: {
-      username: getEnv('BASIC_AUTH_USERNAME'),
-      password: getEnv('BASIC_AUTH_PASSWORD'),
+      username: auth.username,
+      password: auth.password,
     },
 
     trace: 'on-first-retry',
