@@ -54,7 +54,12 @@ export default defineConfig({
 
     {
       name: 'chromium',
-      testIgnore: [/auth\.setup\.ts/, /garage-auth\.spec\.ts/],
+      testIgnore: [
+        /auth\.setup\.ts/,
+        /garage-auth\.spec\.ts/,
+        /cars-api\.spec\.ts/,
+        /profile-network\.spec\.ts/,
+      ],
       use: {
         ...devices['Desktop Chrome'],
       },
@@ -62,7 +67,10 @@ export default defineConfig({
 
     {
       name: 'chromium-auth',
-      testMatch: /garage-auth\.spec\.ts/,
+      testMatch: [
+        /garage-auth\.spec\.ts/,
+        /profile-network\.spec\.ts/,
+      ],
       use: {
         ...devices['Desktop Chrome'],
         storageState: 'playwright/.auth/user.json',
@@ -72,7 +80,12 @@ export default defineConfig({
 
     {
       name: 'firefox',
-      testIgnore: [/auth\.setup\.ts/, /garage-auth\.spec\.ts/],
+      testIgnore: [
+        /auth\.setup\.ts/,
+        /garage-auth\.spec\.ts/,
+        /cars-api\.spec\.ts/,
+        /profile-network\.spec\.ts/,
+      ],
       use: {
         ...devices['Desktop Firefox'],
       },
@@ -80,10 +93,22 @@ export default defineConfig({
 
     {
       name: 'webkit',
-      testIgnore: [/auth\.setup\.ts/, /garage-auth\.spec\.ts/],
+      testIgnore: [
+        /auth\.setup\.ts/,
+        /garage-auth\.spec\.ts/,
+        /cars-api\.spec\.ts/,
+        /profile-network\.spec\.ts/,
+      ],
       use: {
         ...devices['Desktop Safari'],
       },
     },
+
+    {
+      name: 'api',
+      testMatch: /cars-api\.spec\.ts/,
+      dependencies: ['setup'],
+    },
   ],
 });
+
