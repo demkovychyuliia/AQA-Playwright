@@ -1,30 +1,36 @@
 # AQA-Playwright
 
-UI automation testing project using **Playwright** and **TypeScript**.
+UI and API automation testing project using Playwright and TypeScript.
 
 ## Project Overview
 
-This project contains automated UI tests for the QAuto web application.
+This project contains automated tests for the QAuto web application.
 
-The project focuses on testing web application functionality, including:
+The project covers:
 
 - User registration and authentication
-- Form validation
-- Positive and negative test scenarios
-- Boundary value testing
+- Form validation and boundary value testing
 - UI elements and user interactions
+- Page Object Model (POM)
+- Authentication and browser storage state
+- Network interception and response mocking
+- API testing with positive and negative scenarios
+- API response validation and test data cleanup
 
 ## Tech Stack
 
 - Playwright Test
 - TypeScript
 - Node.js and npm
+- dotenv
+- Git
 
 ## Prerequisites
 
 - Node.js and npm
 - Git
-- Valid HTTP Basic Auth credentials for QAuto
+- Valid QAuto application credentials
+- HTTP Basic Authentication credentials
 
 ## Installation
 
@@ -42,40 +48,42 @@ npm install
 npx playwright install
 ```
 
-## Basic Authentication
+## Environment Configuration
 
-The QAuto website is protected by **HTTP Basic Authentication**. Credentials are stored locally and are not committed to Git.
+The project uses environment-specific configuration files to store application URLs and credentials.
 
-1. Copy `config/auth.example.json` to `config/auth.json`.
-2. Replace the placeholders in `config/auth.json` with your Basic Auth credentials:
+1. Copy `.env.example` to `.env.qauto`.
+2. Configure the required environment variables using the example file as a reference.
+3. Keep your actual credentials in local environment files.
 
-```json
-{
-  "username": "YOUR_LOGIN",
-  "password": "YOUR_PASSWORD"
-}
+The project loads `.env.qauto` by default.
+
+To use another environment, set the `TEST_ENV` variable:
+
+```powershell
+$env:TEST_ENV="qauto"
 ```
 
-The `playwright.config.ts` file imports these values and passes them to Playwright through `use.httpCredentials`.
+The `playwright.config.ts` file loads the selected environment configuration and uses it to configure:
 
-The application URL is configured through `use.baseURL`.
+- Application `baseURL`
+- HTTP Basic Authentication credentials
 
-> **Security:** Keep `config/auth.json` in `.gitignore`. Never commit real credentials.
+**Security:** Environment files containing real credentials must remain in `.gitignore`. Never commit actual credentials or authentication data.
 
-## Project Structure
+## Authentication
 
-```text
-AQA-Playwright/
-├── config/
-│   ├── auth.example.json
-│   └── auth.json              # local only; ignored by Git
-├── tests/                    # automated UI tests
-├── .gitignore
-├── package.json
-├── package-lock.json
-├── playwright.config.ts
-└── README.md
-```
+The project uses a dedicated authentication setup test.
+
+The setup test:
+
+- Authenticates the user in QAuto.
+- Saves the authenticated browser state to `playwright/.auth/user.json`.
+- Allows authenticated UI tests to reuse the saved state without repeating the login process.
+
+The authentication state is generated locally and excluded from Git.
+
+Tests that require an authenticated user use the `chromium-auth` project, which depends on the `setup` project.
 
 ## Running Tests
 
@@ -91,10 +99,22 @@ Run all tests:
 npx playwright test
 ```
 
-Run tests in Chromium:
+Run UI tests in Chromium:
 
 ```bash
 npx playwright test --project=chromium
+```
+
+Run authenticated UI tests:
+
+```bash
+npx playwright test --project=chromium-auth
+```
+
+Run API tests:
+
+```bash
+npx playwright test --project=api
 ```
 
 Run tests with a visible browser:
@@ -109,16 +129,86 @@ Run Playwright UI mode:
 npx playwright test --ui
 ```
 
-View the HTML report:
+Open the HTML report:
 
 ```bash
 npx playwright show-report
 ```
 
+## Network Interception and Response Mocking
+
+The project includes a network interception test that verifies how the frontend behaves when an API response is mocked.
+
+**Test file:** `tests/profile-network.spec.ts`
+
+The test covers the following steps:
+
+- Registers a route handler for `GET /api/users/profile` using `page.route()`.
+- Intercepts the profile API request.
+- Replaces the original response using `route.fulfill()` with a custom JSON response.
+- Verifies the HTTP response status.
+- Verifies the response body against the mocked data.
+- Checks that the Profile page displays the mocked user's first and last name.
+
+The test uses custom profile data:
+
+- **First name:** `MockFirstName`
+- **Last name:** `MockLastName`
+
+The frontend receives the mocked response as an HTTP response, without requiring changes to the backend or database.
+
+The mock is applied only within the Playwright browser context. It does not modify the actual server-side data and is removed when the browser context is closed.
+
+Run the network mocking test:
+
+```bash
+npx playwright test profile-network.spec.ts --project=chromium-auth
+```
+
+Run it with a visible browser:
+
+```bash
+npx playwright test profile-network.spec.ts --project=chromium-auth --headed
+```
+
+Debug the test step by step using Playwright Inspector:
+
+```bash
+npx playwright test profile-network.spec.ts --project=chromium-auth --debug
+```
+
+## API Testing
+
+The project includes API tests implemented using Playwright's `APIRequestContext`.
+
+**Test file:** `tests/cars-api.spec.ts`
+
+The tests cover the `POST /api/cars` endpoint.
+
+### Positive Scenario
+
+- Sends a request with valid car data.
+- Verifies that the API returns HTTP `201 Created`.
+- Validates the response data.
+- Deletes the created car after the test to avoid leaving unnecessary test data.
+
+### Negative Scenarios
+
+- **Missing `carBrandId`:** verifies HTTP `400 Bad Request` and the error message `Car brand id is required`.
+- **Invalid mileage type:** sends a string instead of a numeric value and verifies HTTP `400 Bad Request` and the error message `Invalid mileage type`.
+
+The API tests use the authenticated storage state generated by the setup project.
+
+Run API tests:
+
+```bash
+npx playwright test --project=api
+```
+
 ## Test Data
 
-Tests use valid, invalid, and boundary values to verify application behavior.
+- Tests use valid, invalid, and boundary values to verify application behavior.
+- Where required, unique test data is generated to avoid conflicts between test executions.
+- API tests that create test data perform cleanup where applicable.
+- Sensitive configuration data and authentication credentials are stored locally and excluded from version control.
 
-Where required, unique test data is generated to avoid conflicts between test executions.
-
-Sensitive configuration data and authentication credentials are stored locally and excluded from version control.

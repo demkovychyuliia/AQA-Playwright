@@ -1,0 +1,72 @@
+name: Playwright Tests in Docker
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - hw/31.1-github-actions-docker
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  playwright-docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create environment file
+        env:
+          BASE_URL: ${{ secrets.BASE_URL }}
+          BASIC_AUTH_USERNAME: ${{ secrets.BASIC_AUTH_USERNAME }}
+          BASIC_AUTH_PASSWORD: ${{ secrets.BASIC_AUTH_PASSWORD }}
+          USER_EMAIL: ${{ secrets.USER_EMAIL }}
+          USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          for name in BASE_URL BASIC_AUTH_USERNAME BASIC_AUTH_PASSWORD USER_EMAIL USER_PASSWORD; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::Missing GitHub Actions secret: $name"
+              exit 1
+            fi
+          done
+
+          umask 077
+          {
+            printf 'BASE_URL=%s\n' "$BASE_URL"
+            printf 'BASIC_AUTH_USERNAME=%s\n' "$BASIC_AUTH_USERNAME"
+            printf 'BASIC_AUTH_PASSWORD=%s\n' "$BASIC_AUTH_PASSWORD"
+            printf 'USER_EMAIL=%s\n' "$USER_EMAIL"
+            printf 'USER_PASSWORD=%s\n' "$USER_PASSWORD"
+          } > .env.qauto
+
+      - name: Run Playwright tests in Docker
+        run: |
+          docker run --rm \
+            --ipc=host \
+            --volume "$GITHUB_WORKSPACE:/work" \
+            --workdir /work \
+            --env-file .env.qauto \
+            --env CI=true \
+            mcr.microsoft.com/playwright:v1.64.1-jammy \
+            bash -lc "npm ci && npx playwright test --project=chromium"
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Remove environment file
+        if: always()
+        run: rm -f .env.qauto
+        
